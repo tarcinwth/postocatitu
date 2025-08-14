@@ -46,7 +46,7 @@ export default function ContactInfoCard() {
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-      <h3 className="text-2xl font-bold p-6 border-b border-gray-100">Informações de Contato</h3>
+      <h3 className="text-2xl font-extrabold p-6 border-b border-gray-100 text-primary">Informações de Contato</h3>
 
       <div className="p-6">
         <div className="space-y-6">
@@ -63,8 +63,8 @@ export default function ContactInfoCard() {
                 <item.icon className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg">{item.title}</h3>
-                <p className="text-gray-600 mb-2">{item.content}</p>
+                <h3 className="font-bold text-lg text-primary">{item.title}</h3>
+                <p className="text-gray-700 mb-2">{item.content}</p>
                 {item.action && (
                   <Link
                     href={item.action.href}

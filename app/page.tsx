@@ -13,8 +13,6 @@ import {
   Mail,
   Menu,
   X,
-  ArrowRight,
-  ChevronDown,
   Award,
   Users,
   Fuel,
@@ -24,21 +22,21 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/enhanced-button"
-import { Badge } from "@/components/ui/badge"
-import ServiceCard from "@/components/service-card"
 import PriceCounter from "@/components/price-counter"
 import TimelineItem from "@/components/timeline-item"
 import ValueCard from "@/components/value-card"
 import { motion, AnimatePresence } from "framer-motion"
-import FloatingActionButton from "@/components/floating-action-button"
-import TestimonialCarousel from "@/components/testimonial-carousel"
-import TestimonialGrid from "@/components/testimonial-grid"
-import TestimonialFeature from "@/components/testimonial-feature"
-import TestimonialStats from "@/components/testimonial-stats"
-import ContactForm from "@/components/contact-form"
-import MapCard from "@/components/map-card"
-import ContactInfoCard from "@/components/contact-info-card"
+const FloatingActionButton = dynamic(() => import("@/components/floating-action-button"), { ssr: false })
+// Removido fetch duplicado de promoções; o componente PromotionList trata o carregamento
+const FuelPrices = dynamic(() => import("@/components/fuel-prices"), { ssr: false })
+const PromotionList = dynamic(() => import("@/components/promotion-list"), { ssr: false })
+const FAQAccordion = dynamic(() => import("@/components/faq-accordion"), { ssr: false })
+const HeroSection = dynamic(() => import("@/components/sections/HeroSection"), { ssr: false })
+const ServicesSection = dynamic(() => import("@/components/sections/ServicesSection"), { ssr: false })
+const TestimonialsSection = dynamic(() => import("@/components/sections/TestimonialsSection"), { ssr: false })
+const ContactSection = dynamic(() => import("@/components/sections/ContactSection"), { ssr: false })
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -49,40 +47,69 @@ export default function Home() {
   const aboutRef = useRef<HTMLDivElement>(null)
   const testimonialsRef = useRef<HTMLDivElement>(null)
   const contactRef = useRef<HTMLDivElement>(null)
+  // Estado de promoções removido; centralizado em <PromotionList />
+  const menuRef = useRef<HTMLDivElement>(null)
+  const firstLinkRef = useRef<HTMLAnchorElement>(null)
 
   // Handle scroll events
   useEffect(() => {
+    let ticking = false
     const handleScroll = () => {
-      setScrollY(window.scrollY)
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const y = window.scrollY
+        if (y !== scrollY) setScrollY(y)
 
-      // Determine active section based on scroll position
-      const sections = [
-        { ref: heroRef, id: "home" },
-        { ref: servicesRef, id: "servicos" },
-        { ref: aboutRef, id: "sobre" },
-        { ref: testimonialsRef, id: "depoimentos" },
-        { ref: contactRef, id: "contato" },
-      ]
-
-      for (const section of sections.reverse()) {
-        if (section.ref.current && window.scrollY >= section.ref.current.offsetTop - 200) {
-          setActiveSection(section.id)
-          break
+        const sections = [
+          { ref: contactRef, id: "contato" },
+          { ref: testimonialsRef, id: "depoimentos" },
+          { ref: aboutRef, id: "sobre" },
+          { ref: servicesRef, id: "servicos" },
+          { ref: heroRef, id: "home" },
+        ]
+        for (const section of sections) {
+          const el = section.ref.current
+          if (el && y >= el.offsetTop - 200) {
+            if (activeSection !== section.id) setActiveSection(section.id)
+            break
+          }
         }
-      }
+        ticking = false
+      })
     }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll as any)
   }, [])
 
-  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement>) => {
+  // Removido efeito de carregamento de promoções
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      // Foco no primeiro link
+      setTimeout(() => { firstLinkRef.current?.focus() }, 50)
+      // Fechar ao pressionar Esc
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setMobileMenuOpen(false)
+      }
+      // Fechar ao clicar fora
+      const handleClick = (e: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMobileMenuOpen(false)
+      }
+      document.addEventListener("keydown", handleKeyDown)
+      document.addEventListener("mousedown", handleClick)
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown)
+        document.removeEventListener("mousedown", handleClick)
+      }
+    }
+  }, [mobileMenuOpen])
+
+  const scrollToSection = (sectionRef: { current: HTMLElement | null }) => {
     setMobileMenuOpen(false)
     if (sectionRef.current) {
-      window.scrollTo({
-        top: sectionRef.current.offsetTop - 80,
-        behavior: "smooth",
-      })
+      sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
@@ -201,257 +228,88 @@ export default function Home() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
+            ref={menuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu principal"
             className="fixed inset-0 z-50 bg-black/90 flex flex-col"
             initial={{ opacity: 0, x: "100%" }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           >
             <div className="flex justify-end p-6">
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">
                 <X className="h-6 w-6 text-white" />
                 <span className="sr-only">Fechar menu</span>
               </Button>
             </div>
-            <div className="flex flex-col items-center justify-center flex-1 gap-6">
+            <nav className="flex flex-col items-center justify-center flex-1 gap-6" aria-label="Menu principal">
               <Link
                 href="#home"
+                ref={firstLinkRef}
+                tabIndex={0}
                 onClick={() => scrollToSection(heroRef)}
-                className="text-xl font-bold text-white hover:text-primary transition-colors"
+                className="text-xl font-bold text-white hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Início
               </Link>
               <Link
                 href="#servicos"
                 onClick={() => scrollToSection(servicesRef)}
-                className="text-xl font-bold text-white hover:text-primary transition-colors"
+                className="text-xl font-bold text-white hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Serviços
               </Link>
               <Link
                 href="#sobre"
                 onClick={() => scrollToSection(aboutRef)}
-                className="text-xl font-bold text-white hover:text-primary transition-colors"
+                className="text-xl font-bold text-white hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Sobre Nós
               </Link>
               <Link
                 href="#depoimentos"
                 onClick={() => scrollToSection(testimonialsRef)}
-                className="text-xl font-bold text-white hover:text-primary transition-colors"
+                className="text-xl font-bold text-white hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Depoimentos
               </Link>
               <Link
                 href="#contato"
                 onClick={() => scrollToSection(contactRef)}
-                className="text-xl font-bold text-white hover:text-primary transition-colors"
+                className="text-xl font-bold text-white hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Contato
               </Link>
               <Button
-                className="mt-6 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg"
+                className="mt-6 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={() => scrollToSection(contactRef)}
               >
                 Fale Conosco
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
-            </div>
+            </nav>
           </motion.div>
         )}
       </AnimatePresence>
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section ref={heroRef} className="relative h-screen flex items-center">
-          <div className="absolute inset-0">
-            <Image
-              src="/vista-posto.jpeg"
-              alt="Posto Catitu - Combustível de qualidade"
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
-          </div>
-
-          <div className="container relative z-10">
-            <motion.div
-              className="max-w-xl space-y-6"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <Badge className="bg-primary hover:bg-primary/90 text-white px-4 py-1 text-sm">
-                24 HORAS - TODOS OS DIAS
-              </Badge>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
-                Abasteça com <span className="text-primary">qualidade</span> e economia
-              </h1>
-              <p className="text-xl text-white/90">
-                Combustível de alta performance, atendimento excepcional e os melhores preços da região.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button
-                  size="xl"
-                  variant="action"
-                  className="bg-primary hover:bg-primary/90 text-white text-lg relative overflow-hidden group"
-                  onClick={() => scrollToSection(servicesRef)}
-                >
-                  <span className="relative z-10 flex items-center">
-                    Nossos Serviços
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </Button>
-                <Button
-                  size="xl"
-                  variant="white-outline"
-                  className="border-2 border-white text-white hover:bg-white/10 text-lg"
-                  onClick={() => scrollToSection(contactRef)}
-                >
-                  Fale Conosco
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-
-          <motion.div
-            className="absolute bottom-10 left-1/2 transform -translate-x-1/2 cursor-pointer"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, delay: 1 }}
-            onClick={() => scrollToSection(servicesRef)}
-          >
-            <ChevronDown className="h-10 w-10 text-white" />
-          </motion.div>
-        </section>
+        <HeroSection heroRef={heroRef} servicesRef={servicesRef} scrollToSection={scrollToSection} />
 
         {/* Price Counter Section */}
         <section className="py-12 bg-gray-100">
           <div className="container">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <PriceCounter label="Gasolina Comum" finalValue={6.59} />
-              <PriceCounter label="Gasolina Aditivada" finalValue={6.59} />
-              <PriceCounter label="Etanol" finalValue={4.99} />
-              <PriceCounter label="Diesel S10" finalValue={5.99} />
-              <PriceCounter label="Diesel S500" finalValue={5.95} />
-            </div>
+            <FuelPrices />
           </div>
         </section>
 
-        {/* Services Section */}
-        <section ref={servicesRef} className="py-24 bg-white">
-          <div className="container">
-            <div className="text-center mb-16">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <span className="inline-block px-4 py-1 mb-3 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                  NOSSOS SERVIÇOS
-                </span>
-                <h2 className="text-4xl md:text-5xl font-bold mb-4">Mais que um posto de combustível</h2>
-                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                  Oferecemos uma experiência completa para você e seu veículo
-                </p>
-              </motion.div>
-            </div>
+        {/* Promoções Section */}
+        <PromotionList />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ServiceCard
-                  title="Combustível Premium"
-                  description="Gasolina, etanol e diesel de alta qualidade que garantem melhor desempenho e economia para seu veículo."
-                  icon="fuel"
-                  imageSrc="/banner3.jpeg"
-                  hoverEffect={true}
-                />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ServiceCard
-                  title="Loja de Conveniência"
-                  description="Produtos frescos, lanches, bebidas e itens essenciais para sua viagem ou dia a dia."
-                  icon="store"
-                  imageSrc="/atendimento1.jpeg"
-                  hoverEffect={true}
-                />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ServiceCard
-                  title="Lavagem Expressa"
-                  description="Serviço rápido e eficiente de lavagem que deixa seu veículo impecável em poucos minutos."
-                  icon="car-wash"
-                  imageSrc="/atendimento3.jpeg"
-                  hoverEffect={true}
-                />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ServiceCard
-                  title="Troca de Óleo"
-                  description="Utilizamos as melhores marcas do mercado e oferecemos serviço rápido com profissionais qualificados."
-                  icon="oil"
-                  imageSrc="/atendimento2.jpeg"
-                  hoverEffect={true}
-                />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ServiceCard
-                  title="Calibragem de Pneus"
-                  description="Serviço gratuito de calibragem com equipamentos de alta precisão para garantir segurança e economia."
-                  icon="tire"
-                  imageSrc="/banner1.jpeg"
-                  hoverEffect={true}
-                />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ServiceCard
-                  title="Atendimento 24h"
-                  description="Estamos sempre abertos para atender suas necessidades a qualquer hora do dia ou da noite."
-                  icon="24h"
-                  imageSrc="/vista-posto.jpeg"
-                  hoverEffect={true}
-                />
-              </motion.div>
-            </div>
-          </div>
-        </section>
+        <div ref={servicesRef}>
+          <ServicesSection servicesRef={servicesRef} />
+        </div>
 
         {/* About Section - Enhanced */}
         <section ref={aboutRef} className="py-24 bg-gray-50">
@@ -466,7 +324,7 @@ export default function Home() {
                 <span className="inline-block px-4 py-1 mb-3 bg-primary/10 text-primary rounded-full text-sm font-medium">
                   SOBRE NÓS
                 </span>
-                <h2 className="text-4xl md:text-5xl font-bold mb-4">Nossa história e valores</h2>
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900">Nossa história e valores</h2>
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                   Conheça a trajetória do Posto Catitu e os valores que nos guiam diariamente
                 </p>
@@ -540,7 +398,7 @@ export default function Home() {
             {/* Timeline da Nossa História */}
             <div className="mb-20">
               <motion.h3
-                className="text-2xl font-bold mb-12 text-center"
+                className="text-2xl font-extrabold mb-12 text-center text-gray-900"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, margin: "-100px" }}
@@ -596,7 +454,7 @@ export default function Home() {
             {/* Nossos Valores */}
             <div>
               <motion.h3
-                className="text-2xl font-bold mb-10 text-center"
+                className="text-2xl font-extrabold mb-10 text-center text-gray-900"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, margin: "-100px" }}
@@ -651,154 +509,16 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Testimonials Section - Fully Enhanced */}
-        <section ref={testimonialsRef} className="py-24 bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-          <div className="container">
-            <div className="text-center mb-16">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <span className="inline-block px-4 py-1 mb-3 bg-primary/20 text-primary rounded-full text-sm font-medium">
-                  DEPOIMENTOS
-                </span>
-                <h2 className="text-4xl md:text-5xl font-bold mb-4">O que nossos clientes dizem</h2>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                  A satisfação dos nossos clientes é o nosso maior orgulho
-                </p>
-              </motion.div>
-            </div>
+        <div ref={testimonialsRef}>
+          <TestimonialsSection testimonialsRef={testimonialsRef} />
+        </div>
 
-            {/* Featured Testimonial */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true, margin: "-100px" }}
-              className="mb-16"
-            >
-              <TestimonialFeature
-                quote="Ótimo atendimento, rápido e eficiente.
-Preço do combustível dentro do esperado.
-Serve cafezinho sempre quente.
-Tem sanitários, calibrador e lavagem de vidros.
-Trabalha com todos os tipos de combustíveis.
-Vende outros produtos, como óleos e aditivos."
-                author="João Carvalho"
-                role="Motorista Profissional"
-                rating={5}
-                imageSrc="/images/profile-man.png"
-              />
-            </motion.div>
+        {/* FAQ Accordion */}
+        <FAQAccordion />
 
-            {/* Testimonial Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true, margin: "-100px" }}
-              className="mb-16"
-            >
-              <TestimonialStats />
-            </motion.div>
-
-            {/* Testimonial Carousel */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              viewport={{ once: true, margin: "-100px" }}
-              className="mb-16"
-            >
-              <TestimonialCarousel />
-            </motion.div>
-
-            {/* Testimonial Grid */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <div className="relative mb-16">
-                <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
-                <div className="flex justify-center">
-                  <span className="relative bg-gray-800 px-6 -top-3 text-gray-400 text-sm uppercase tracking-wider">
-                    Mais depoimentos
-                  </span>
-                </div>
-              </div>
-
-              <TestimonialGrid />
-            </motion.div>
-
-            <motion.div
-              className="mt-12 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <Button variant="primary" className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg">
-                Ver Todos os Depoimentos
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Contact Section - Enhanced */}
-        <section ref={contactRef} className="py-24 bg-white">
-          <div className="container">
-            <div className="text-center mb-16">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <span className="inline-block px-4 py-1 mb-3 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                  CONTATO
-                </span>
-                <h2 className="text-4xl md:text-5xl font-bold mb-4">Estamos à sua disposição</h2>
-                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                  Entre em contato conosco para tirar dúvidas, fazer sugestões ou conhecer mais sobre nossos serviços.
-                </p>
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ContactInfoCard />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true, margin: "-100px" }}
-              >
-                <ContactForm />
-              </motion.div>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <MapCard />
-            </motion.div>
-          </div>
-        </section>
+        <div ref={contactRef}>
+          <ContactSection contactRef={contactRef} />
+        </div>
       </main>
 
       {/* Footer */}

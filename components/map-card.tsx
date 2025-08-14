@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { MapPin, Navigation, Phone, Clock, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/enhanced-button"
+import { Card } from "@/components/ui/card"
 
 export default function MapCard() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -36,7 +37,7 @@ export default function MapCard() {
   }, [activeTab])
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+    <Card className="overflow-hidden h-full border-0 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
       <div className="p-6 border-b border-gray-100">
         <div className="flex justify-between items-center">
           <h3 className="text-2xl font-bold">Nossa Localização</h3>
@@ -144,6 +145,6 @@ export default function MapCard() {
       <div className="p-4 bg-primary/10 text-center">
         <p className="text-primary font-medium">Venha nos visitar! Estamos abertos 24 horas todos os dias.</p>
       </div>
-    </div>
+    </Card>
   )
 }

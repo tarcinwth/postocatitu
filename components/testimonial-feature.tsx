@@ -36,7 +36,7 @@ export default function TestimonialFeature({ quote, author, role, rating, imageS
 
           <blockquote className="text-xl md:text-2xl italic text-white mb-6 relative">
             <span className="absolute -top-6 -left-2 text-8xl opacity-20 text-primary">"</span>
-            <p className="relative z-10">
+            <p className="relative z-10 text-white">
               {quote.split("\n").map((line, index) => (
                 <React.Fragment key={index}>
                   {line}

@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useRef } from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/enhanced-button"
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ContactForm() {
   const [formState, setFormState] = useState({
@@ -21,18 +23,21 @@ export default function ContactForm() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const { toast } = useToast()
+  const successRef = useRef<HTMLDivElement>(null)
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormState((prev) => ({ ...prev, [name]: value }))
 
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
+    // Validação em tempo real
+    let error = ""
+    if (name === "name" && !value.trim()) error = "Nome é obrigatório"
+    if (name === "email" && !value.trim()) error = "Email é obrigatório"
+    else if (name === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Email inválido"
+    if (name === "message" && !value.trim()) error = "Mensagem é obrigatória"
+
+    setErrors((prev) => ({ ...prev, [name]: error }))
   }
 
   const validate = () => {
@@ -63,12 +68,27 @@ export default function ContactForm() {
 
     setIsSubmitting(true)
 
-    // Simulate form submission
+    // Simular envio do formulário com chance de erro
     setTimeout(() => {
+      const erroSimulado = Math.random() < 0.15 // 15% de chance de erro
       setIsSubmitting(false)
+      if (erroSimulado) {
+        toast({
+          title: "Erro ao enviar",
+          description: "Ocorreu um problema ao enviar sua mensagem. Tente novamente.",
+        })
+        return
+      }
       setIsSubmitted(true)
-
-      // Reset form after 3 seconds
+      toast({
+        title: "Mensagem enviada!",
+        description: "Obrigado por entrar em contato. Responderemos em breve.",
+      })
+      // Foco acessível na mensagem de sucesso
+      setTimeout(() => {
+        successRef.current?.focus()
+      }, 100)
+      // Resetar formulário após 3 segundos
       setTimeout(() => {
         setIsSubmitted(false)
         setFormState({
@@ -91,6 +111,9 @@ export default function ContactForm() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-10 text-center"
+            tabIndex={-1}
+            ref={successRef}
+            aria-live="polite"
           >
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="h-10 w-10 text-green-600" />
@@ -114,8 +137,10 @@ export default function ContactForm() {
                   onChange={handleChange}
                   placeholder="Seu nome completo"
                   className={`w-full ${errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? "name-error" : undefined}
                 />
-                {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                {errors.name && <p id="name-error" className="mt-1 text-sm text-red-500" aria-live="polite">{errors.name}</p>}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -131,8 +156,10 @@ export default function ContactForm() {
                     onChange={handleChange}
                     placeholder="seu.email@exemplo.com"
                     className={`w-full ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? "email-error" : undefined}
                   />
-                  {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                  {errors.email && <p id="email-error" className="mt-1 text-sm text-red-500" aria-live="polite">{errors.email}</p>}
                 </div>
 
                 <div>
@@ -162,8 +189,10 @@ export default function ContactForm() {
                   onChange={handleChange}
                   placeholder="Digite sua mensagem aqui..."
                   className={`w-full min-h-[150px] ${errors.message ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                  aria-invalid={!!errors.message}
+                  aria-describedby={errors.message ? "message-error" : undefined}
                 />
-                {errors.message && <p className="mt-1 text-sm text-red-500">{errors.message}</p>}
+                {errors.message && <p id="message-error" className="mt-1 text-sm text-red-500" aria-live="polite">{errors.message}</p>}
               </div>
 
               <div className="pt-2">

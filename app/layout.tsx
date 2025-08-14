@@ -1,7 +1,7 @@
 import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,26 +24,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              document.addEventListener('DOMContentLoaded', function() {
-                const buttons = document.querySelectorAll('button:not([data-no-hover]), a.btn');
-                buttons.forEach(button => {
-                  button.addEventListener('mouseenter', () => {
-                    button.classList.add('scale-[1.02]');
-                  });
-                  button.addEventListener('mouseleave', () => {
-                    button.classList.remove('scale-[1.02]');
-                  });
-                });
-              });
-            `,
-          }}
-        />
+        {children}
+        {/* Toaster para notificações globais */}
+        <Toaster />
       </body>
     </html>
   )

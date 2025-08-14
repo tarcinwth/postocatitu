@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -16,6 +16,8 @@ interface Promotion {
 
 export default function PromotionSlider() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
+  const touchEndX = useRef<number | null>(null)
 
   const promotions: Promotion[] = [
     {
@@ -49,6 +51,25 @@ export default function PromotionSlider() {
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? promotions.length - 1 : prevIndex - 1))
   }
 
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+  const handleTouchEnd = () => {
+    if (touchStartX.current !== null && touchEndX.current !== null) {
+      const diff = touchStartX.current - touchEndX.current
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) nextSlide()
+        else prevSlide()
+      }
+    }
+    touchStartX.current = null
+    touchEndX.current = null
+  }
+
   useEffect(() => {
     const interval = setInterval(() => {
       nextSlide()
@@ -63,6 +84,9 @@ export default function PromotionSlider() {
         <div
           className="flex transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {promotions.map((promo) => (
             <div key={promo.id} className="min-w-full">
@@ -91,6 +115,7 @@ export default function PromotionSlider() {
         size="icon"
         className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border-none shadow-md hover:shadow-lg z-10"
         onClick={prevSlide}
+        aria-label="Anterior"
       >
         <ChevronLeft className="h-5 w-5 text-primary" />
         <span className="sr-only">Anterior</span>
@@ -101,6 +126,7 @@ export default function PromotionSlider() {
         size="icon"
         className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border-none shadow-md hover:shadow-lg z-10"
         onClick={nextSlide}
+        aria-label="Próximo"
       >
         <ChevronRight className="h-5 w-5 text-primary" />
         <span className="sr-only">Próximo</span>
@@ -113,6 +139,7 @@ export default function PromotionSlider() {
             className={`h-2 w-2 rounded-full ${index === currentIndex ? "bg-primary" : "bg-gray-300"}`}
             onClick={() => setCurrentIndex(index)}
             aria-label={`Ir para slide ${index + 1}`}
+            aria-current={index === currentIndex ? "true" : undefined}
           />
         ))}
       </div>

@@ -7,7 +7,7 @@ const config = {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
+    "./*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {
@@ -69,8 +69,8 @@ const config = {
           to: { height: "0" },
         },
         "pulse-light": {
-          "0%, 100%": { opacity: 1 },
-          "50%": { opacity: 0.85 },
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.85" },
         },
       },
       animation: {

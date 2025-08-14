@@ -42,8 +42,8 @@ export default function TeamSection() {
             <span className="inline-block px-4 py-1 mb-3 bg-primary/10 text-primary rounded-full text-sm font-medium">
               NOSSA EQUIPE
             </span>
-            <h2 className="text-4xl font-bold mb-4">Profissionais dedicados ao seu serviço</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-extrabold mb-4 text-primary">Profissionais dedicados ao seu serviço</h2>
+            <p className="text-gray-700 max-w-2xl mx-auto">
               Nossa equipe está sempre pronta para atender você com excelência e dedicação
             </p>
           </motion.div>

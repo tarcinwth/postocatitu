@@ -23,7 +23,7 @@ export default function TestimonialCard({
 }: TestimonialCardProps) {
   return (
     <Card
-      className={`overflow-hidden transition-all duration-300 hover:shadow-lg h-full border-0 ${
+      className={`overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 h-full border-0 ${
         darkMode ? "bg-gray-800/80 backdrop-blur-sm" : "bg-white"
       }`}
     >
@@ -48,7 +48,7 @@ export default function TestimonialCard({
 
           {/* Testimonial text */}
           <div className="mb-8 relative z-10">
-            <p className={`italic text-lg leading-relaxed ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+            <p className={`italic text-lg leading-relaxed ${darkMode ? "text-white" : "text-gray-900"}`}>
               "{testimonial}"
             </p>
           </div>

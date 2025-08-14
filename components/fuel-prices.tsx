@@ -1,137 +1,80 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState } from "react"
+import ValueCard from "@/components/value-card"
+import { Fuel, Droplet, Truck, Award } from "lucide-react"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+
+function SkeletonCard() {
+  return (
+    <div className="animate-pulse bg-gradient-to-br from-gray-100 via-gray-50 to-primary/5 rounded-2xl p-8 h-[220px] flex flex-col items-center shadow-lg">
+      <div className="bg-gray-200 w-16 h-16 rounded-full mb-5" />
+      <div className="h-6 w-32 bg-gray-200 rounded mb-3" />
+      <div className="h-5 w-20 bg-gray-200 rounded" />
+    </div>
+  )
+}
 
 interface FuelPrice {
-  type: string
-  price: string
-  icon: string
-  color: string
+  id: string
+  tipo: string
+  valor: number
   badge?: string
 }
 
+const iconMap: Record<string, any> = {
+  "Gasolina Comum": Fuel,
+  "Gasolina Aditivada": Award,
+  "Etanol": Droplet,
+  "Diesel S10": Truck,
+  "Diesel S500": Truck,
+}
+
 export default function FuelPrices() {
-  const fuelPrices: FuelPrice[] = [
-    {
-      type: "Gasolina Comum",
-      price: "R$ 5,49",
-      icon: "gas-pump",
-      color: "bg-red-100 text-primary",
-      badge: "Mais vendido",
-    },
-    {
-      type: "Gasolina Aditivada",
-      price: "R$ 5,79",
-      icon: "gas-pump-premium",
-      color: "bg-gray-100 text-secondary",
-    },
-    {
-      type: "Etanol",
-      price: "R$ 3,89",
-      icon: "droplet",
-      color: "bg-accent text-primary",
-      badge: "Promoção",
-    },
-    {
-      type: "Diesel S10",
-      price: "R$ 6,29",
-      icon: "truck",
-      color: "bg-gray-100 text-secondary",
-    },
-  ]
+  const [fuelPrices, setFuelPrices] = useState<FuelPrice[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchPrices() {
+      setLoading(true)
+      try {
+        const querySnapshot = await getDocs(collection(db, "precos"))
+        const data: FuelPrice[] = []
+        querySnapshot.forEach((doc) => {
+          data.push({ id: doc.id, ...doc.data() } as FuelPrice)
+        })
+        setFuelPrices(data)
+      } catch (e) {
+        setFuelPrices([])
+      }
+      setLoading(false)
+    }
+    fetchPrices()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <SkeletonCard key={idx} />
+        ))}
+      </div>
+    )
+  }
+
+  if (fuelPrices.length === 0) {
+    return <div className="text-center py-8 text-gray-500">Nenhum preço cadastrado.</div>
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {fuelPrices.map((fuel, index) => (
-        <Card key={index} className="overflow-hidden border-2 hover:border-primary transition-all duration-300">
-          <CardContent className="p-6">
-            <div className={`w-12 h-12 rounded-full ${fuel.color} flex items-center justify-center mb-4`}>
-              {fuel.icon === "gas-pump" && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                >
-                  <path d="M4 20V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
-                  <path d="M14 20h-8" />
-                  <path d="M14 4h2a2 2 0 0 1 2 2v4" />
-                  <path d="M18 16V8a2 2 0 0 1 2-2h2" />
-                  <path d="M22 12v4" />
-                </svg>
-              )}
-              {fuel.icon === "gas-pump-premium" && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                >
-                  <path d="M4 20V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
-                  <path d="M14 20h-8" />
-                  <path d="M14 4h2a2 2 0 0 1 2 2v4" />
-                  <path d="M18 16V8a2 2 0 0 1 2-2h2" />
-                  <path d="M22 12v4" />
-                  <path d="M9 12v4" />
-                  <path d="M7 12h4" />
-                </svg>
-              )}
-              {fuel.icon === "droplet" && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                >
-                  <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
-                </svg>
-              )}
-              {fuel.icon === "truck" && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                >
-                  <path d="M10 17h4V5H2v12h3" />
-                  <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1" />
-                  <circle cx="7.5" cy="17.5" r="2.5" />
-                  <circle cx="17.5" cy="17.5" r="2.5" />
-                </svg>
-              )}
-            </div>
-            <h3 className="text-lg font-bold">{fuel.type}</h3>
-            <p className="text-2xl font-bold text-primary mt-2">{fuel.price}</p>
-            {fuel.badge && (
-              <Badge className="mt-3" variant="outline">
-                {fuel.badge}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      {fuelPrices.map((fuel, idx) => (
+        <ValueCard
+          key={fuel.id}
+          icon={iconMap[fuel.tipo] || Fuel}
+          title={fuel.tipo}
+          description={<span className="text-2xl font-bold text-primary">R$ {fuel.valor?.toFixed(2)}</span>}
+          delay={0.1 * idx}
+        />
       ))}
     </div>
   )
