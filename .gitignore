@@ -16,9 +16,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
-.env* # ignora todos os arquivos .env
-.env.local # ignora o arquivo .env.local
+# env files (garantia extra)
+.env
+.env.*
+.env.local
 
 # vercel
 .vercel
